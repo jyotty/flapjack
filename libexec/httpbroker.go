@@ -276,16 +276,17 @@ func submitCachedState(states map[string]State, config Config) {
 				log.Printf("State for %s is stale. Sending UNKNOWN.\n", id)
 				event.State = "UNKNOWN"
 				event.Summary = fmt.Sprintf("httpbroker: Cached state is stale (%ds old, should be < %ds)", elapsed, state.TTL)
-			}
+      }
 			if config.Debug {
 				log.Printf("Sending event data for %s\n", id)
 			}
 
 			_, err := transport.SendVersionQueue(event, config.FlapjackVersion, config.Queue)
 
-			if config.Debug && (err != nil) {
-				log.Printf("Error sending event data: %s\n", err)
-			}
+      // TTL is less than 0, send once and remove from memory
+			if state.TTL < 0 {
+			  delete(states, id)
+      }
 		}
 		time.Sleep(config.Interval)
 	}
